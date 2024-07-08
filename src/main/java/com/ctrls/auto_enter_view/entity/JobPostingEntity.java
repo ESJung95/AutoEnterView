@@ -6,7 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -52,10 +52,10 @@ public class JobPostingEntity extends BaseEntity {
   private String workTime;
 
   @Column(nullable = false)
-  private LocalDateTime startDateTime;
+  private LocalDate startDate;
 
   @Column(nullable = false)
-  private LocalDateTime endDateTime;
+  private LocalDate endDate;
 
   private String jobPostingContent;
 }
