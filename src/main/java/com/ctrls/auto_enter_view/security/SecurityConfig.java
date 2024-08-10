@@ -1,6 +1,8 @@
 package com.ctrls.auto_enter_view.security;
 
+import com.ctrls.auto_enter_view.component.GoogleOAuth2AuthenticationSuccessHandler;
 import com.ctrls.auto_enter_view.enums.UserRole;
+import com.ctrls.auto_enter_view.service.GoogleOAuth2Service;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +28,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final GoogleOAuth2Service googleOAuth2Service;
+  private final GoogleOAuth2AuthenticationSuccessHandler googleOAuth2AuthenticationSuccessHandler;
 
   @Bean
   public PasswordEncoder passwordEncoder() {
@@ -50,10 +54,16 @@ public class SecurityConfig {
         .sessionManagement(sessionManagement ->
             sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         )
+
+        //OAuth2 설정
+        .oauth2Login(oauth2customizer -> oauth2customizer.userInfoEndpoint(
+                userInfoEndpointConfig -> userInfoEndpointConfig.userService(googleOAuth2Service))
+            .successHandler(googleOAuth2AuthenticationSuccessHandler))
+
         .authorizeHttpRequests(authHttpRequest -> authHttpRequest
 
             // 권한 없이 접근 가능
-            .requestMatchers("/api-test/**").permitAll()
+            .requestMatchers("/oauth2/**", "/api-test/**", "/login/**").permitAll()
             .requestMatchers("/companies/signup", "/candidates/signup").permitAll()
             .requestMatchers("/candidates/find-email").permitAll()
             .requestMatchers("/common/**").permitAll()
