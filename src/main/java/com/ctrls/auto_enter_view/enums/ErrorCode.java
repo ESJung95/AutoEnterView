@@ -13,6 +13,7 @@ public enum ErrorCode {
   EMAIL_DUPLICATION(409, "이메일이 중복됩니다."),
   COMPANY_NUMBER_DUPLICATION(409, "회사 전화번호가 중복됩니다."),
   EMAIL_NOT_FOUND(404, "가입된 사용자 이메일이 없습니다."),
+  NAME_NOT_FOUND(404, "가입된 사용자 이름이 없습니다."),
   EMAIL_SEND_FAILURE(500, "이메일 전송에 실패했습니다."),
   INTERNAL_SERVER_ERROR(500, "내부 서버 오류입니다."),
   INVALID_TOKEN(401, "유효하지 않은 토큰입니다."),
@@ -51,7 +52,8 @@ public enum ErrorCode {
   UNSCHEDULE_FAILED(500, "스케줄링 취소에 실패하였습니다."),
   FAILED_MAIL_SCHEDULING(500, "메일 예약 등록을 실패했습니다."),
   FAILED_MAIL_UNSCHEDULING(500, "메일 예약 취소를 실패했습니다."),
-  INVALID_CURRENT_STEP_ID(400, "잘못된 채용 공고 단계 입니다.");
+  INVALID_CURRENT_STEP_ID(400, "잘못된 채용 공고 단계 입니다."),
+  JSON_PROCESSING_ERROR(500, "JSON 처리 중 오류가 발생했습니다.");
 
   private final int status;
   private final String message;
