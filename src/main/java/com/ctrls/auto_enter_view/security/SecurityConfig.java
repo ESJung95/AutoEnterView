@@ -1,6 +1,8 @@
 package com.ctrls.auto_enter_view.security;
 
+import com.ctrls.auto_enter_view.component.OAuth2GithubSuccessHandler;
 import com.ctrls.auto_enter_view.enums.UserRole;
+import com.ctrls.auto_enter_view.service.GithubOAuthService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -11,8 +13,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -26,12 +26,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final GithubOAuthService githubOAuthService;
+  private final OAuth2GithubSuccessHandler oAuth2GithubSuccessHandler;
 
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-
-    return new BCryptPasswordEncoder();
-  }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -58,8 +55,8 @@ public class SecurityConfig {
             .requestMatchers("/candidates/find-email").permitAll()
             .requestMatchers("/common/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/companies/{companyKey}/information").permitAll()
-            .requestMatchers("/swagger-ui/**", "/swagger-resources/**", "/v3/api-docs/**")
-            .permitAll()
+            .requestMatchers("/swagger-ui/**", "/swagger-resources/**", "/v3/api-docs/**").permitAll()
+            .requestMatchers( "/oauth2/**", "/login/**").permitAll()
 
             // 권한 필요 (candidate, company 둘 중 하나)
             .requestMatchers("/common/signout", "common/{key}/password").authenticated()
@@ -76,7 +73,17 @@ public class SecurityConfig {
             .requestMatchers("/interview-schedule-participants/**")
             .hasRole(UserRole.ROLE_COMPANY.name().substring(5))
 
-            .anyRequest().authenticated())
+            .anyRequest().authenticated()
+
+        )
+
+        // OAuth2 로그인 설정 추가
+        .oauth2Login(oauth2 -> oauth2
+            .userInfoEndpoint(userInfo -> userInfo
+                .userService(githubOAuthService))
+            .successHandler(oAuth2GithubSuccessHandler)
+        )
+
 
         // JWT 필터 추가
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
