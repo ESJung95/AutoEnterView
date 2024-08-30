@@ -41,3 +41,4 @@ logs
 docker-compose.yml
 *.http
 
+/src/main/generated
