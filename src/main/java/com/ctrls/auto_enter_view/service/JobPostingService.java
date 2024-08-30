@@ -22,7 +22,9 @@ import com.ctrls.auto_enter_view.entity.JobPostingEntity;
 import com.ctrls.auto_enter_view.entity.JobPostingImageEntity;
 import com.ctrls.auto_enter_view.entity.JobPostingStepEntity;
 import com.ctrls.auto_enter_view.entity.JobPostingTechStackEntity;
+import com.ctrls.auto_enter_view.enums.Education;
 import com.ctrls.auto_enter_view.enums.ErrorCode;
+import com.ctrls.auto_enter_view.enums.JobCategory;
 import com.ctrls.auto_enter_view.enums.TechStack;
 import com.ctrls.auto_enter_view.exception.CustomException;
 import com.ctrls.auto_enter_view.repository.ApplicantRepository;
@@ -32,6 +34,7 @@ import com.ctrls.auto_enter_view.repository.CandidateRepository;
 import com.ctrls.auto_enter_view.repository.CompanyRepository;
 import com.ctrls.auto_enter_view.repository.JobPostingImageRepository;
 import com.ctrls.auto_enter_view.repository.JobPostingRepository;
+import com.ctrls.auto_enter_view.repository.JobPostingRepositoryDSL;
 import com.ctrls.auto_enter_view.repository.JobPostingStepRepository;
 import com.ctrls.auto_enter_view.repository.JobPostingTechStackRepository;
 import java.time.LocalDate;
@@ -66,6 +69,7 @@ public class JobPostingService {
   private final JobPostingStepRepository jobPostingStepRepository;
   private final AppliedJobPostingRepository appliedJobPostingRepository;
   private final JobPostingImageRepository jobPostingImageRepository;
+  private final JobPostingRepositoryDSL jobPostingRepositoryDSL;
   private final FilteringService filteringService;
   private final MailComponent mailComponent;
   private final KeyGenerator keyGenerator;
@@ -113,7 +117,6 @@ public class JobPostingService {
     }
 
     return jobPostingEntity;
-
   }
 
   /**
@@ -128,6 +131,7 @@ public class JobPostingService {
    */
   @Transactional
   public void editJobPosting(UserDetails userDetails, String jobPostingKey, Request request) {
+
     JobPostingEntity jobPostingEntity = jobPostingRepository.findByJobPostingKey(jobPostingKey)
         .orElseThrow(() -> new CustomException(JOB_POSTING_NOT_FOUND));
 
@@ -189,6 +193,7 @@ public class JobPostingService {
    */
   @Transactional
   public void deleteJobPosting(UserDetails userDetails, String jobPostingKey) {
+
     log.info("채용 공고 삭제하기");
 
     if (verifyExistsByJobPostingKey(jobPostingKey)) {
@@ -227,6 +232,7 @@ public class JobPostingService {
   @Transactional(readOnly = true)
   public List<JobPostingInfoDto> getJobPostingsByCompanyKey(UserDetails userDetails,
       String companyKey) {
+
     log.info("회사 본인이 등록한 채용공고 목록 조회");
 
     CompanyEntity company = findCompanyByPrincipal(userDetails);
@@ -251,10 +257,12 @@ public class JobPostingService {
   // TODO : 회사가 탈퇴했을 때, 발생하는 문제점 해결하기 - 탈퇴한 회사 이름을 가져오지 못해 에러 발생 상황이 있었음
   @Transactional(readOnly = true)
   public MainJobPostingDto.Response getAllJobPosting(int page, int size) {
+
     String cacheKey = "mainJobPostings:" + page + "-" + size;
 
     // Redis : 캐시된 데이터 확인
-    MainJobPostingDto.Response cachedResponse = (MainJobPostingDto.Response) redisObjectTemplate.opsForValue().get(cacheKey);
+    MainJobPostingDto.Response cachedResponse = (MainJobPostingDto.Response) redisObjectTemplate.opsForValue()
+        .get(cacheKey);
     if (cachedResponse != null) {
       log.info("Redis에서 캐시된 데이터 조회");
       return cachedResponse;
@@ -297,6 +305,7 @@ public class JobPostingService {
    */
   @Transactional(readOnly = true)
   public JobPostingDetailDto.Response getJobPostingDetail(String jobPostingKey) {
+
     log.info("채용 공고 상세 보기");
 
     LocalDate currentDate = LocalDate.now();
@@ -327,6 +336,7 @@ public class JobPostingService {
    */
   @Transactional
   public void applyJobPosting(String jobPostingKey, String candidateKey) {
+
     JobPostingEntity jobPostingEntity = jobPostingRepository.findByJobPostingKey(jobPostingKey)
         .orElseThrow(() -> new CustomException(
             JOB_POSTING_NOT_FOUND));
@@ -364,6 +374,44 @@ public class JobPostingService {
   }
 
   /**
+   * 검색 기능
+   *
+   * @param page
+   * @param size
+   * @param jobCategory
+   * @param techStacks
+   * @param employmentType
+   * @param minCareer
+   * @param maxCareer
+   * @param education
+   * @return
+   */
+  public MainJobPostingDto.Response searchJobPosting(int page, int size, JobCategory jobCategory,
+      List<TechStack> techStacks, String employmentType, Integer minCareer, Integer maxCareer,
+      Education education) {
+
+    Pageable pageable = PageRequest.of(page - 1, size, Sort.by("endDate").ascending());
+    Page<JobPostingEntity> jobPostingPage = jobPostingRepositoryDSL.searchJobPosting(pageable,
+        jobCategory, techStacks, employmentType, minCareer, maxCareer, education);
+
+    int totalPages = jobPostingPage.getTotalPages();
+    long totalElements = jobPostingPage.getTotalElements();
+
+    List<MainJobPostingDto.JobPostingMainInfo> jobPostingMainInfoList = jobPostingPage.getContent()
+        .stream()
+        .map(this::createJobPostingMainInfo)
+        .collect(Collectors.toList());
+
+    MainJobPostingDto.Response response = MainJobPostingDto.Response.builder()
+        .jobPostingsList(jobPostingMainInfoList)
+        .totalPages(totalPages)
+        .totalElements(totalElements)
+        .build();
+
+    return response;
+  }
+
+  /**
    * 이미지 URL 가져오기
    *
    * @param jobPostingKey 채용공고 KEY
@@ -376,7 +424,6 @@ public class JobPostingService {
 
     return imageEntityOpt.map(JobPostingImageEntity::getCompanyImageUrl).orElse(null);
   }
-
 
   /**
    * 채용 공고 단계 중 맨 처음 단계 가져오기
@@ -409,6 +456,7 @@ public class JobPostingService {
    * @param companyKey 회사 KEY
    */
   private void verifyCompanyOwnership(CompanyEntity company, String companyKey) {
+
     log.info("회사 본인 확인");
     if (!company.getCompanyKey().equals(companyKey)) {
       throw new CustomException(NO_AUTHORITY);
@@ -422,6 +470,7 @@ public class JobPostingService {
    * @return 지원자 존재시 TRUE, 없을 시 FALSE
    */
   private boolean verifyExistsByJobPostingKey(String jobPostingKey) {
+
     log.info("채용 공고에 지원한 지원자가 존재하는지 확인");
     Long firstStep = getJobPostingStepEntity(jobPostingKey).getId();
 
@@ -506,6 +555,7 @@ public class JobPostingService {
    */
   private void notifyCandidates(List<CandidateListEntity> candidates,
       JobPostingEntity jobPostingEntity) {
+
     log.info("지원자들에게 채용 공고 수정 알림 메일 전송");
 
     for (CandidateListEntity candidate : candidates) {

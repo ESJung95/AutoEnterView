@@ -2,7 +2,11 @@ package com.ctrls.auto_enter_view.controller;
 
 import com.ctrls.auto_enter_view.dto.common.JobPostingDetailDto;
 import com.ctrls.auto_enter_view.dto.common.MainJobPostingDto;
+import com.ctrls.auto_enter_view.enums.Education;
+import com.ctrls.auto_enter_view.enums.JobCategory;
+import com.ctrls.auto_enter_view.enums.TechStack;
 import com.ctrls.auto_enter_view.service.JobPostingService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +49,23 @@ public class CommonJobPostingController {
       @PathVariable String jobPostingKey) {
 
     JobPostingDetailDto.Response response = jobPostingService.getJobPostingDetail(jobPostingKey);
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/search")
+  public ResponseEntity<MainJobPostingDto.Response> searchJobPosting(
+      @RequestParam(defaultValue = "1") int page,
+      @RequestParam(defaultValue = "24") int size,
+      @RequestParam(required = false) JobCategory jobCategory,
+      @RequestParam(required = false) List<TechStack> techStacks,
+      @RequestParam(required = false) String employmentType,
+      @RequestParam(required = false) Integer minCareer,
+      @RequestParam(required = false) Integer maxCareer,
+      @RequestParam(required = false) Education education
+  ) {
+
+    MainJobPostingDto.Response response = jobPostingService.searchJobPosting(page, size,
+        jobCategory, techStacks, employmentType, minCareer, maxCareer, education);
     return ResponseEntity.ok(response);
   }
 }
