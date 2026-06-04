@@ -26,7 +26,7 @@
 
 #### 🚀 [Auto Enter View](https://auto-enterview-fe.vercel.app/) : 서비스 배포
 
-#### 🧾 [Auto Enter View](https://gray-heather-95a.notion.site/AutoEnterView-bad9c322c8104fc8bd86f4f86c6c7291) : Notion
+#### 🧾 [Auto Enter View](https://gray-heather-95a.notion.site/AutoEnterView-1614c36802368018ad63ff0824ae7af0) : Notion
 
 #### 🖥️ [Database Schema](https://www.erdcloud.com/d/kMYDqc92D3iuqZGgL) : ERD (Entity Relationship Diagram)
 
@@ -248,7 +248,7 @@
 <br>
 
 ## 🎯 Trouble Shooting
-**➡ [Go To Trouble Shooting](https://www.notion.so/b68b7782cb62448d93bbbb9225a45292)**
+**➡ [Go To Trouble Shooting](https://gray-heather-95a.notion.site/1614c368023681e29727eca68d8b04ff)**
 
 <br>
 <br>
